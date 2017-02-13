@@ -1,5 +1,7 @@
 <?php
 
+ini_set("max_execution_time", 300);
+
 define("HASH0", str_repeat("0", 64));
 
 class Block {
@@ -12,7 +14,7 @@ class Block {
         $this->previous = $previous;
         $this->data = $data;
         
-        $this->hash_block();
+        $this->hash = Block::hash_block($this);
     }
     
     function result() {
@@ -25,14 +27,14 @@ class Block {
         );
     }
     
-    function hash_block() {
+    public static function hash_block($block) {
         $to_hash = "";
-        $to_hash .= $this->id;
-        $to_hash .= $this->nonce;
-        $to_hash .= $this->previous;
-        $to_hash .= $this->data;
+        $to_hash .= $block->id;
+        $to_hash .= $block->nonce;
+        $to_hash .= $block->previous;
+        $to_hash .= $block->data;
         
-        $this->hash = Block::sha256($to_hash);
+        return Block::sha256($to_hash);
     }
     
     function mine($n=1) {
@@ -42,7 +44,7 @@ class Block {
         
         while (!$state) {
             $this->nonce = $this->nonce + 1;
-            $this->hash_block();
+            $this->hash = Block::hash_block($this);
             
             if (preg_match("/0{".$n."}.{".(64 - $n)."}/", $this->hash)) {
                 $state = true;
@@ -54,6 +56,12 @@ class Block {
     
     public static function sha256($data) {
         return hash("sha256", $data);
+    }
+    
+    public static function verify($block) {
+        $hash = Block::hash_block($block);
+        
+        return $hash == $block->hash;
     }
     
 }
